@@ -1,4 +1,4 @@
-# pulse_chase_calibration
+# Pulse-Chase Calibration
 ITK wrappers for registration of Allen atlas to cleared hemibrains + regional covariance measurements across experiments
 
 #
