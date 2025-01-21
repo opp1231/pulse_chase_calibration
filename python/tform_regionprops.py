@@ -50,7 +50,47 @@ def match_h5_files_by_channels(base_dir):
     
     return valid_file_sets
 
-def do_the_transform(base_dir,animal):
+def do_the_forward_transform(base_dir,animal):
+    animals = match_h5_files_by_channels(base_dir)
+    current = animals[animal]
+
+    print('Loading the atlas....')
+    fx = itk.imread(f'/nrs/spruston/Boaz/I2/atlas10_hemi.tif',pixel_type=itk.US)
+    mv = read_h5_image(current['ch0'], 'Data')
+
+    print('Loading the parameter files....')
+    param_dir = f'/nrs/spruston/Boaz/I2/itk/'
+    parameter_object = itk.ParameterObject.New()
+    rigid_parameter_map = parameter_object.GetDefaultParameterMap('rigid', 8)
+    rigid_parameter_map['HowToCombineTransforms'] = ['Compose']
+    parameter_object.AddParameterMap(rigid_parameter_map)
+    parameter_object.AddParameterFile(param_dir+f'Order1_Par0000affine.txt')
+    parameter_object.AddParameterFile(param_dir+f'Order3_Par0000bspline.txt')
+    parameter_object.AddParameterFile(param_dir+f'Order4_Par0000bspline.txt')
+    parameter_object.AddParameterFile(param_dir+f'Order5_Par0000bspline.txt')
+
+
+    print('Calculating the transform....')
+
+    output_dir= os.path.join(base_dir, animal, 'itk')
+    if not os.path.isdir(output_dir):
+        os.mkdir(output_dir)
+
+    inverse_transform_parameters = itk.elastix_registration_method(fx, mv,
+                                            parameter_object=parameter_object,
+                                            log_to_file=True,
+                                            output_directory = output_dir)
+
+    transformix_object = itk.TransformixFilter.New()
+    transformix_object.SetTransformParameterObject(inverse_transform_parameters[1])
+
+    writeParam = transformix_object.GetTransformParameterObject()
+
+    for index in range(writeParam.GetNumberOfParameterMaps()):
+        parameter_map_test = writeParam.GetParameterMap(index)
+        parameter_object.WriteParameterFile(parameter_map_test,output_dir+"/TransformParameters.{0}.txt".format(index))
+
+def do_the_inverse_transform(base_dir,animal):
     animals = match_h5_files_by_channels(base_dir)
     current = animals[animal]
 
@@ -89,13 +129,49 @@ def do_the_transform(base_dir,animal):
 
     for index in range(writeParam.GetNumberOfParameterMaps()):
         parameter_map_test = writeParam.GetParameterMap(index)
-        parameter_object.WriteParameterFile(parameter_map_test,output_dir+"/TestInverse_Parameters.{0}.txt".format(index))
+        parameter_object.WriteParameterFile(parameter_map_test,output_dir+"/InverseTransformParameters.{0}.txt".format(index))
+        
+def calculate_region_props_from_forward(base_dir, animal):
+
+    image_dir = os.path.join(base_dir,animal , 'itk')
+    print(image_dir)
+    image_list = []
+
+    for name in ['ch0','ch1','ch2']:
+        image_path = os.path.join(image_dir,name+ '.tif')
+        print(f'reading {image_path}')
+        image_list.append(io.imread(image_path))
+    multichannel_image = np.stack(image_list, axis=-1)
+
+    print('Reading annotation file...')
+    annotation_np_swapped = tifffile.imread(os.path.join(f'/nrs/spruston/Boaz/I2/old','annotatin10_hemi.tif'))
+
+    print('Calculating region props...')
+
+    regions = regionprops(annotation_np_swapped.astype(np.uint16),intensity_image=multichannel_image)
+
+    non_empty_regions = [region for region in regions if region.area > 0]
+
+    props = [{'label' : region.label, 'intensity_mean' : region.intensity_mean, 'area' : region.area} for region in non_empty_regions]
+    print('finished region props')
+
+    df_stats = pd.DataFrame.from_dict(props)
+    df_stats.rename(columns={
+        'intensity_mean-0': 'Mean_ch0',
+        'intensity_mean-1': 'Mean_ch1',
+        'intensity_mean-2': 'Mean_ch2',
+        'area': 'N',  # N represents the area (number of pixels in the region)
+        'label': 'Region'
+    }, inplace=True)
+
+    csv_path = os.path.join(image_dir,'region_stats.csv')
+    print(f'saving csv to {csv_path}')
+    df_stats.to_csv(csv_path, index=False)
         
         
 def calculate_region_props_from_inverse(base_dir, animal):
 
     animals = match_h5_files_by_channels(base_dir)
-    print(animals)
     current = animals[animal]
 
     print('Reading multi-channel image...')
@@ -170,7 +246,7 @@ def main():
     
     args = parse_args()
     
-    do_the_transform(base_dir = args.basedir, animal = args.animal)
+    do_the_inverse_transform(base_dir = args.basedir, animal = args.animal)
     calculate_region_props_from_inverse(base_dir = args.basedir, animal = args.animal)
     
 if __name__ == '__main__':
