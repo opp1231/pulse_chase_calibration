@@ -246,6 +246,9 @@ def main():
     
     args = parse_args()
     
+    do_the_forward_transform(base_dir = args.basedir, animal = args.animal)
+    calculate_region_props_from_forward(base_dir = args.basedir, animal = args.animal)
+    
     do_the_inverse_transform(base_dir = args.basedir, animal = args.animal)
     calculate_region_props_from_inverse(base_dir = args.basedir, animal = args.animal)
     
