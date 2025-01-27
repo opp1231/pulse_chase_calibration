@@ -157,7 +157,22 @@ def do_the_inverse_transform(base_dir,animal):
         parameter_map_test = writeParam.GetParameterMap(index)
         parameter_object.WriteParameterFile(parameter_map_test,output_dir+"/InverseTransformParameters.{0}.txt".format(index))
         
-    return writeParam
+    param_files = [f'InverseTransformParameters.{i}.txt' for i in range(5)]
+    parameter_object = itk.ParameterObject.New()
+    for p in param_files:
+        parameter_object.AddParameterFile(os.path.join(out_dir, p))
+    
+    transformix_filter = itk.TransformixFilter.New(Input=mv, TransformParameterObject=parameter_object)
+    transformix_filter.SetComputeSpatialJacobian(False)
+    transformix_filter.SetComputeDeterminantOfSpatialJacobian(False)
+    transformix_filter.SetComputeDeformationField(False)
+    transformix_filter.Update()
+    transformed_image = transformix_filter.GetOutput()
+    
+    image_path = os.path.join(out_dir,'atlas_10_inverse.tif')
+    itk.imwrite(itk.GetImageFromArray(transformed_image),image_path)
+        
+    return transformed_image
         
 def calculate_region_props_from_forward(base_dir, animal):
     
@@ -279,10 +294,10 @@ def main():
     
     args = parse_args()
     
-    images = do_the_forward_transform(base_dir = args.basedir, animal = args.animal)
+    transformed_volume = do_the_forward_transform(base_dir = args.basedir, animal = args.animal)
     forward_stats = calculate_region_props_from_forward(base_dir = args.basedir, animal = args.animal)
     
-    inverse_tform = do_the_inverse_transform(base_dir = args.basedir, animal = args.animal)
+    transformed_atlas = do_the_inverse_transform(base_dir = args.basedir, animal = args.animal)
     inverse_stats = calculate_region_props_from_inverse(base_dir = args.basedir, animal = args.animal)
     
 if __name__ == '__main__':
