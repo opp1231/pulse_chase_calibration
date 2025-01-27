@@ -89,6 +89,32 @@ def do_the_forward_transform(base_dir,animal):
     for index in range(writeParam.GetNumberOfParameterMaps()):
         parameter_map_test = writeParam.GetParameterMap(index)
         parameter_object.WriteParameterFile(parameter_map_test,output_dir+"/TransformParameters.{0}.txt".format(index))
+        
+    param_files = [f'TransformParameters.{i}.txt' for i in range(5)]
+    parameter_object = itk.ParameterObject.New()
+    for p in param_files:
+        parameter_object.AddParameterFile(os.path.join(out_dir, p))
+
+    image_list = []
+    
+    for name, path in current.items():
+        print(f'Reading {path}')
+        # image_list.append(read_h5_image(path, 'Data'))
+        moving_image = read_h5_image(path, 'Data')
+        transformix_filter = itk.TransformixFilter.New(Input=moving_image, TransformParameterObject=parameter_object)
+        transformix_filter.SetComputeSpatialJacobian(False)
+        transformix_filter.SetComputeDeterminantOfSpatialJacobian(False)
+        transformix_filter.SetComputeDeformationField(False)
+        transformix_filter.Update()
+        transformed_image = transformix_filter.GetOutput()
+        image_list.append(transformed_image)
+        
+    multichannel_image = np.stack(image_list, axis=-1)
+
+    for name, j in zip(['ch0','ch1','ch2'],range(3)):
+        image_path = os.path.join(out_dir,name+ '.tif')
+        print(f'reading {image_path}')
+        itk.imwrite(itk.GetImageFromArray(multichannel_image[:,:,:,j]),image_path)
 
 def do_the_inverse_transform(base_dir,animal):
     animals = match_h5_files_by_channels(base_dir)
@@ -131,6 +157,8 @@ def do_the_inverse_transform(base_dir,animal):
         parameter_map_test = writeParam.GetParameterMap(index)
         parameter_object.WriteParameterFile(parameter_map_test,output_dir+"/InverseTransformParameters.{0}.txt".format(index))
         
+    return writeParam
+        
 def calculate_region_props_from_forward(base_dir, animal):
     
     animals = match_h5_files_by_channels(base_dir)
@@ -138,32 +166,11 @@ def calculate_region_props_from_forward(base_dir, animal):
     
     out_dir = os.path.join(base_dir,animal , 'itk')
 
-    param_files = [f'TransformParameters.{i}.txt' for i in range(5)]
-    parameter_object = itk.ParameterObject.New()
-    for p in param_files:
-        parameter_object.AddParameterFile(os.path.join(out_dir, p))
-
-    image_list = []
-    
-    for name, path in current.items():
-        print(f'Reading {path}')
-        # image_list.append(read_h5_image(path, 'Data'))
-        moving_image = read_h5_image(path, 'Data')
-        transformix_filter = itk.TransformixFilter.New(Input=moving_image, TransformParameterObject=parameter_object)
-        transformix_filter.SetComputeSpatialJacobian(False)
-        transformix_filter.SetComputeDeterminantOfSpatialJacobian(False)
-        transformix_filter.SetComputeDeformationField(False)
-        transformix_filter.Update()
-        transformed_image = transformix_filter.GetOutput()
-        image_list.append(transformed_image)
-        
-    multichannel_image = np.stack(image_list, axis=-1)
-
-    for name, j in zip(['ch0','ch1','ch2'],range(3)):
+    for name in ['ch0','ch1','ch2']:
         image_path = os.path.join(out_dir,name+ '.tif')
         print(f'reading {image_path}')
-        image_list.append(io.imwrite(image_path,multichannel_image[j,:,:,:]))
-    # multichannel_image = np.stack(image_list, axis=-1)
+        image_list.append(io.imread(image_path))
+    multichannel_image = np.stack(image_list, axis=-1)
 
     print('Reading annotation file...')
     annotation_np_swapped = tifffile.imread(os.path.join(f'/nrs/spruston/Boaz/I2/old','annotatin10_hemi.tif'))
@@ -189,6 +196,8 @@ def calculate_region_props_from_forward(base_dir, animal):
     csv_path = os.path.join(image_dir,'region_stats.csv')
     print(f'saving csv to {csv_path}')
     df_stats.to_csv(csv_path, index=False)
+    
+    return df_stats
         
         
 def calculate_region_props_from_inverse(base_dir, animal):
@@ -262,17 +271,19 @@ def calculate_region_props_from_inverse(base_dir, animal):
     csv_path = os.path.join(output_dir,'region_stats.csv')
     print(f'saving csv to {csv_path}')
     df_stats.to_csv(csv_path, index=False)
+    
+    return df_stats
 
 
 def main():
     
     args = parse_args()
     
-    # do_the_forward_transform(base_dir = args.basedir, animal = args.animal)
-    calculate_region_props_from_forward(base_dir = args.basedir, animal = args.animal)
+    images = do_the_forward_transform(base_dir = args.basedir, animal = args.animal)
+    forward_stats = calculate_region_props_from_forward(base_dir = args.basedir, animal = args.animal)
     
-    do_the_inverse_transform(base_dir = args.basedir, animal = args.animal)
-    calculate_region_props_from_inverse(base_dir = args.basedir, animal = args.animal)
+    inverse_tform = do_the_inverse_transform(base_dir = args.basedir, animal = args.animal)
+    inverse_stats = calculate_region_props_from_inverse(base_dir = args.basedir, animal = args.animal)
     
 if __name__ == '__main__':
     

@@ -13,15 +13,18 @@ o   numpy
 o   pandas
 These can be installed using your package manager of choice (e.g. pip or a minimal conda such as the miniforge distribution)
 
+## Cluster Usage
+The python script for registration was run on the Janelia compute cluster using 16 slots and runs for ~8 hours.
+
 ## Allen-to-Experiment (Inverse) Transform
 This python script is run by running the executable as follows:
 ```
-    python inverse_tform_regionprops.py /path/to/exerpiment/dir/ ANMXXXXXX_JFXXX
+    python tform_regionprops.py /path/to/exerpiment/dir/ ANMXXXXXX_JFXXX
 ```
 
-The experiment path should be the folder which contains all experiments from a given run. The animal name (ANMXXXXXX_JFXXX) correponds to the specific experiment in question. The script will first calculate the regisration(s) of the experimental volume to the 10um Allen atlas using itk (and the reverse). The parameter files are adapted from those created by the Emily Dennis lab at Janelia. They are largely similar, though the inverse transform includes a first step of an isometric stretch.
+The experiment path should be the folder which contains all experiments from a given run. The animal name (ANMXXXXXX_JFXXX) correponds to the specific experiment in question. The script will first calculate the regisration(s) of the experimental volume to the 10um Allen atlas using itk (and then the reverse). The parameter files are adapted from those created by the Emily Dennis lab at Janelia. They are largely similar, though the inverse transform includes a first step of an isometric stretch.
 
-Then, using these transform parameters, it calculates region properties of the experimental volume using the mapped Allen annotations. These are saved as a csv and will be processed/used in the jupyter notebook.
+Then, using these transform parameters, it calculates region properties of the experimental volume using the mapped Allen annotations. These are saved as a .csv and will be processed/used in the jupyter notebook.
 
 ## Regional Covariances
 This jupyter notebook can be run cell-by-cell. The first few blocks set filepaths and imports the region properties calculated from the forward (experiment-to-Allen) registration.
