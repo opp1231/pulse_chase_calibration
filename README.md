@@ -6,11 +6,11 @@ This directory contains two files: one python script for using itk to calculate 
 
 ## Dependencies
 Both the python script and jupyter notebook require the following packages:
-o   h5py
-o   tifffile
-o   scikit-image
-o   numpy
-o   pandas
++   h5py
++   tifffile
++   scikit-image
++   numpy
++   pandas
 These can be installed using your package manager of choice (e.g. pip or a minimal conda such as the miniforge distribution)
 
 ## Cluster Usage
