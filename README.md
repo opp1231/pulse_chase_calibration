@@ -17,6 +17,8 @@ These can be installed using your package manager of choice (e.g. pip or a minim
 ## Cluster Usage
 The python script for registration was run on the Janelia compute cluster using 16 slots and runs for ~8 hours.
 
+The jupyter notebook can be run locally on a decent workstation or even a laptop.
+
 ## Allen-to-Experiment (Inverse) Transform
 This python script is run by running the executable as follows:
 ```
