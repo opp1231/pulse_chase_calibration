@@ -15,6 +15,7 @@ Both the python script and jupyter notebook require the following packages:
 +   scikit-image
 +   numpy
 +   pandas
++   nibabel
 
 These can be installed using your package manager of choice (e.g. pip or a minimal conda such as the miniforge distribution)
 
