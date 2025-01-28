@@ -1,7 +1,7 @@
 # Pulse-Chase Calibration
 ITK wrappers for registration of Allen atlas to cleared hemibrains + regional covariance measurements across experiments. 
 
-This work is associated with that of the DELTA iDisco protocol [here](https://github.com/boazmohar/DELTA_iDISCO).
+This work is associated with that of the DELTA iDISCO protocol [here](https://github.com/boazmohar/DELTA_iDISCO).
 
 Relevant code and parameter files were adapated from [source](https://github.com/the-dennis-lab/cleared_brains/).
 
