@@ -199,7 +199,7 @@ def calculate_region_props_from_forward(base_dir, animal):
     
     print('Calculating region props...')
 
-    regions = regionprops(annotation_np_swapped.astype(np.uint16),intensity_image=multichannel_image)
+    regions = regionprops(annotation_np_swapped.astype(np.uint64),intensity_image=multichannel_image)
 
     non_empty_regions = [region for region in regions if region.area > 0]
 
@@ -243,7 +243,7 @@ def calculate_region_props_from_inverse(base_dir, animal):
     img_data = img.get_fdata()
 
     annotation_np_swapped = np.swapped(img_data,0,-1)
-    annotation = itk.GetImageFromArray(annotation_np_swapped.astype(np.uint16))
+    annotation = itk.GetImageFromArray(annotation_np_swapped.astype(np.uint64))
 
     # print('Reading parameter files...')
     output_dir = os.path.join(base_dir,animal,"invert_test")
