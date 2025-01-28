@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import argparse
 from pathlib import Path
+import nibabel as nb
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Allen-to-Experiment Transform and Regionprops Calculation')
@@ -188,8 +189,14 @@ def calculate_region_props_from_forward(base_dir, animal):
     multichannel_image = np.stack(image_list, axis=-1)
 
     print('Reading annotation file...')
-    annotation_np_swapped = tifffile.imread(os.path.join(f'/nrs/spruston/Boaz/I2/old','annotatin10_hemi.tif'))
+    # Load the NIfTI image
+    img = nib.load(os.path.join(f'/nrs/spruston/Boaz/I2/','annotation_10_hemi.nii'))
 
+    # Access the image data
+    img_data = img.get_fdata()
+
+    annotation_np_swapped = np.swapped(img_data,0,-1)
+    
     print('Calculating region props...')
 
     regions = regionprops(annotation_np_swapped.astype(np.uint16),intensity_image=multichannel_image)
@@ -229,7 +236,13 @@ def calculate_region_props_from_inverse(base_dir, animal):
     multichannel_image = np.stack(image_list, axis=-1)
 
     print('Reading annotation file...')
-    annotation_np_swapped = tifffile.imread(os.path.join(f'/nrs/spruston/Boaz/I2/old','annotatin10_hemi.tif'))
+    # Load the NIfTI image
+    img = nib.load(os.path.join(f'/nrs/spruston/Boaz/I2/','annotation_10_hemi.nii'))
+
+    # Access the image data
+    img_data = img.get_fdata()
+
+    annotation_np_swapped = np.swapped(img_data,0,-1)
     annotation = itk.GetImageFromArray(annotation_np_swapped.astype(np.uint16))
 
     # print('Reading parameter files...')
