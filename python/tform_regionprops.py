@@ -197,7 +197,7 @@ def calculate_region_props_from_forward(base_dir, animal):
     # Access the image data
     img_data = img.get_fdata()
 
-    annotation_np_swapped = np.swapped(img_data,0,-1)
+    annotation_np_swapped = np.swapaxes(img_data,0,-1)
     
     print('Calculating region props...')
 
@@ -244,7 +244,7 @@ def calculate_region_props_from_inverse(base_dir, animal):
     # Access the image data
     img_data = img.get_fdata()
 
-    annotation_np_swapped = np.swapped(img_data,0,-1)
+    annotation_np_swapped = np.swapaxes(img_data,0,-1)
     annotation = itk.GetImageFromArray(annotation_np_swapped.astype(np.uint64))
 
     # print('Reading parameter files...')
