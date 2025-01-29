@@ -73,7 +73,7 @@ def do_the_forward_transform(base_dir,animal):
 
     print('Calculating the transform....')
 
-    output_dir= os.path.join(base_dir, animal, 'itk')
+    output_dir = os.path.join(base_dir, animal, 'itk')
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
 
@@ -94,7 +94,7 @@ def do_the_forward_transform(base_dir,animal):
     param_files = [f'TransformParameters.{i}.txt' for i in range(5)]
     parameter_object = itk.ParameterObject.New()
     for p in param_files:
-        parameter_object.AddParameterFile(os.path.join(out_dir, p))
+        parameter_object.AddParameterFile(os.path.join(output_dir, p))
 
     image_list = []
     
@@ -113,7 +113,7 @@ def do_the_forward_transform(base_dir,animal):
     multichannel_image = np.stack(image_list, axis=-1)
 
     for name, j in zip(['ch0','ch1','ch2'],range(3)):
-        image_path = os.path.join(out_dir,name+ '.tif')
+        image_path = os.path.join(output_dir,name+ '.tif')
         print(f'reading {image_path}')
         itk.imwrite(itk.GetImageFromArray(multichannel_image[:,:,:,j]),image_path)
 
@@ -139,7 +139,7 @@ def do_the_inverse_transform(base_dir,animal):
 
     print('Calculating the inverse....')
 
-    output_dir= os.path.join(base_dir, animal, 'invert_test')
+    output_dir = os.path.join(base_dir, animal, 'invert_test')
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
 
@@ -161,7 +161,7 @@ def do_the_inverse_transform(base_dir,animal):
     param_files = [f'InverseTransformParameters.{i}.txt' for i in range(5)]
     parameter_object = itk.ParameterObject.New()
     for p in param_files:
-        parameter_object.AddParameterFile(os.path.join(out_dir, p))
+        parameter_object.AddParameterFile(os.path.join(output_dir, p))
     
     transformix_filter = itk.TransformixFilter.New(Input=mv, TransformParameterObject=parameter_object)
     transformix_filter.SetComputeSpatialJacobian(False)
@@ -170,7 +170,7 @@ def do_the_inverse_transform(base_dir,animal):
     transformix_filter.Update()
     transformed_image = transformix_filter.GetOutput()
     
-    image_path = os.path.join(out_dir,'atlas_10_inverse.tif')
+    image_path = os.path.join(output_dir,'atlas_10_inverse.tif')
     itk.imwrite(itk.GetImageFromArray(transformed_image),image_path)
         
     return transformed_image
@@ -180,17 +180,19 @@ def calculate_region_props_from_forward(base_dir, animal):
     animals = match_h5_files_by_channels(base_dir)
     current = animals[animal]
     
-    out_dir = os.path.join(base_dir,animal , 'itk')
+    output_dir = os.path.join(base_dir,animal , 'itk')
+    print('Reading multi-channel image...')
+    image_list = []
 
     for name in ['ch0','ch1','ch2']:
-        image_path = os.path.join(out_dir,name+ '.tif')
+        image_path = os.path.join(output_dir,name+ '.tif')
         print(f'reading {image_path}')
         image_list.append(io.imread(image_path))
     multichannel_image = np.stack(image_list, axis=-1)
 
     print('Reading annotation file...')
     # Load the NIfTI image
-    img = nib.load(os.path.join(f'/nrs/spruston/Boaz/I2/','annotation_10_hemi.nii'))
+    img = nb.load(os.path.join(f'/nrs/spruston/Boaz/I2/','annotation_10_hemi.nii'))
 
     # Access the image data
     img_data = img.get_fdata()
@@ -215,7 +217,7 @@ def calculate_region_props_from_forward(base_dir, animal):
         'label': 'Region'
     }, inplace=True)
 
-    csv_path = os.path.join(image_dir,'region_stats.csv')
+    csv_path = os.path.join(output_dir,'region_stats.csv')
     print(f'saving csv to {csv_path}')
     df_stats.to_csv(csv_path, index=False)
     
@@ -237,7 +239,7 @@ def calculate_region_props_from_inverse(base_dir, animal):
 
     print('Reading annotation file...')
     # Load the NIfTI image
-    img = nib.load(os.path.join(f'/nrs/spruston/Boaz/I2/','annotation_10_hemi.nii'))
+    img = nb.load(os.path.join(f'/nrs/spruston/Boaz/I2/','annotation_10_hemi.nii'))
 
     # Access the image data
     img_data = img.get_fdata()
